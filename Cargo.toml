@@ -1,0 +1,11 @@
+[package]
+name = "zhaba"
+version = "0.1.0"
+authors = ["Michael.Ilyin <milyin@gmail.com>"]
+
+[dependencies]
+serde="*"
+serde_derive="*"
+maud = { version = "*", features = ["rocket"] }
+rocket = "0.3.2"
+rocket_codegen = "0.3.2"

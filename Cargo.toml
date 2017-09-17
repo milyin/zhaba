@@ -9,3 +9,8 @@ serde_derive="*"
 maud = { version = "*", features = ["rocket"] }
 rocket = "0.3.2"
 rocket_codegen = "0.3.2"
+
+[dependencies.rocket_contrib]
+version="0.3.2"
+default-features = false
+features = ["json"]

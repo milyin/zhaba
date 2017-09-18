@@ -15,7 +15,7 @@ where
     let mut formser = FormSerializer::default();
     if let Ok(_) = value.serialize(&mut formser) {
         html! {
-            form {
+            form method = "POST" {
                 @for nv in &formser.fields {
                     span (nv.0); " ";
                     input name = (nv.0) value = (nv.1);

@@ -20,7 +20,6 @@ mod kit;
 mod schema;
 mod models;
 
-use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;
 use std::env;
@@ -81,6 +80,8 @@ fn main() {
             routes![
                 api::update::login::get,
                 api::update::login::post,
+                api::update::register::get,
+                api::update::register::post,
                 api::view::users::get
             ],
         )

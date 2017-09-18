@@ -2,7 +2,7 @@ use DbConn;
 use rocket_contrib::Json;
 use diesel::QueryResult;
 use models::User;
-use schema::users::dsl::*;
+use schema::users::dsl::users;
 use diesel::prelude::LoadDsl;
 
 #[get("/users")]

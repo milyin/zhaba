@@ -19,6 +19,7 @@ mod api;
 mod kit;
 mod schema;
 mod models;
+mod model;
 
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;
@@ -29,6 +30,7 @@ use std::ops::Deref;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
+use model::Model;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(
@@ -75,6 +77,7 @@ fn init_pool() -> Pool {
 fn main() {
     rocket::ignite()
         .manage(init_pool())
+        .manage(Model::new())
         .mount(
             "/",
             routes![

@@ -1,11 +1,11 @@
-use DbConn;
 use rocket_contrib::Json;
-use diesel::QueryResult;
+use rocket::request::State;
 use models::User;
-use diesel::prelude::LoadDsl;
+use model::Model;
+use model::Error;
 
 #[get("/users")]
-fn get(conn: DbConn) -> QueryResult<Json<Vec<User>>> {
-    use schema::users::dsl::users;
-    users.load::<User>(&*conn).map(|user| Json(user))
+fn get(model:State<Model>) -> Result<Json<Vec<User>>,Error> {
+//    model.users().map(|user| Json(user))
+    model.users().map(Json)
 }

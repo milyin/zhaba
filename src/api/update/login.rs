@@ -1,6 +1,8 @@
 use rocket::request::Form;
+use rocket::request::State;
 use maud::Markup;
 use kit::form::to_form;
+use model::Model;
 
 #[derive(FromForm, Default, Serialize)]
 pub struct Login {
@@ -14,6 +16,7 @@ pub fn get() -> Markup {
 }
 
 #[post("/login", data = "<_data>")]
-pub fn post(_data: Form<Login>) -> String {
-    "NOT IMPLEMENTED".to_owned()
+pub fn post( model: State<Model>, _data: Form<Login>) -> String {
+    model.inc();
+    model.get().to_string()
 }

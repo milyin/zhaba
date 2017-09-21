@@ -2,7 +2,7 @@ use rocket::request::Form;
 use rocket::request::State;
 use maud::Markup;
 use kit::form::to_form;
-use model::Model;
+use app::Model;
 
 #[derive(FromForm, Default, Serialize)]
 pub struct Login {

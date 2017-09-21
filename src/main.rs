@@ -15,22 +15,19 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-mod api;
-mod kit;
-mod schema;
-mod models;
-mod model;
-
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;
 use std::env;
 use dotenv::dotenv;
-
 use std::ops::Deref;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
-use model::Model;
+use app::Model;
+
+pub mod api;
+pub mod kit;
+pub mod app;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(

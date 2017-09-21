@@ -1,30 +1,8 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use r2d2_diesel::ConnectionManager;
-use diesel::sqlite::SqliteConnection;
-use std::env;
-use dotenv::dotenv;
-use r2d2;
-use models;
-use diesel::prelude::LoadDsl;
-use diesel::prelude::LimitDsl;
-use diesel::prelude::ExecuteDsl;
-use diesel::prelude::FilterDsl;
-use diesel::ExpressionMethods;
-use std::error::Error;
 use std::fmt;
-use diesel;
+use std::error::Error;
 use serde::ser::{Serialize, Serializer};
-
-type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
-
-/// Initializes a database pool.
-fn init_pool() -> Pool {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let config = r2d2::Config::default();
-    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-    r2d2::Pool::new(config, manager).expect("db pool")
-}
+use diesel;
+use r2d2;
 
 #[derive(Debug)]
 pub enum ModelError {
@@ -89,45 +67,3 @@ impl Error for ModelError {
 }
 
 pub type ModelResult<T> = Result<T, ModelError>;
-
-pub struct Model {
-    pool: Pool,
-    counter: AtomicUsize
-}
-
-impl Model {
-
-    pub fn new() -> Model {
-        Model {
-            pool: init_pool(),
-            counter: AtomicUsize::new(0)
-        }
-    }
-    pub fn inc(&self) {
-        self.counter.fetch_add(1,Ordering::Relaxed);
-    }
-    pub fn get(&self) -> usize {
-        self.counter.load(Ordering::Relaxed)
-    }
-
-    pub fn users(&self) -> ModelResult<Vec<models::User>> {
-        let conn = self.pool.get()?;
-        use schema::users::dsl::users;
-        Ok(users.load::<models::User>(&*conn)?)
-    }
-    pub fn register(&self, name: &str, email: &str, password: &str ) -> ModelResult<()> {
-        let conn = self.pool.get()?;
-        use schema::users;
-        let user = users::table.filter(users::name.eq(name)).limit(1).load::<models::User>(&*conn)?;
-        if user.len() > 0 {
-           Err(ModelError::UserExists)
-        } else {
-            diesel::insert(&models::NewUser {
-                name: name,
-                email: email,
-                password_hash: password
-            }).into(users::table).execute(&*conn)?;
-            Ok(())
-        }
-    }
-}

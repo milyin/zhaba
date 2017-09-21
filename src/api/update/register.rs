@@ -3,7 +3,7 @@ use rocket::request::State;
 use rocket_contrib::Json;
 use maud::Markup;
 use kit::form::to_form;
-use model::{Model, ModelResult};
+use app::{Model, ModelResult};
 
 #[derive(FromForm, Default, Serialize)]
 pub struct Register {

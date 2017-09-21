@@ -6,10 +6,16 @@ use dotenv::dotenv;
 use r2d2;
 use models;
 use diesel::prelude::LoadDsl;
-use std::error;
+use diesel::prelude::LimitDsl;
+use diesel::prelude::ExecuteDsl;
+use diesel::prelude::FilterDsl;
+use diesel::ExpressionMethods;
+use std::error::Error;
+use std::fmt;
+use diesel;
+use serde::ser::{Serialize, Serializer};
 
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
-pub type Error = Box<error::Error>;
 
 /// Initializes a database pool.
 fn init_pool() -> Pool {
@@ -19,6 +25,70 @@ fn init_pool() -> Pool {
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
     r2d2::Pool::new(config, manager).expect("db pool")
 }
+
+#[derive(Debug)]
+pub enum ModelError {
+    DieselError(diesel::result::Error),
+    DieselConnectionError(diesel::result::ConnectionError),
+    ConnectionPoolError(r2d2::GetTimeout),
+    UserExists
+}
+
+impl<'v> Serialize for ModelError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S:Serializer {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl From<diesel::result::Error> for ModelError {
+    fn from(err: diesel::result::Error) -> ModelError {
+        ModelError::DieselError(err)
+    }
+}
+
+impl From<diesel::result::ConnectionError> for ModelError {
+    fn from(err: diesel::result::ConnectionError) -> ModelError {
+        ModelError::DieselConnectionError(err)
+    }
+}
+
+impl From<r2d2::GetTimeout> for ModelError {
+    fn from(err: r2d2::GetTimeout) -> ModelError {
+        ModelError::ConnectionPoolError(err)
+    }
+}
+
+impl fmt::Display for ModelError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ModelError::DieselError(ref err) => err.fmt(f),
+            ModelError::DieselConnectionError(ref err) => err.fmt(f),
+            ModelError::ConnectionPoolError(ref err) => err.fmt(f),
+            ref ownerror => write!(f, "{}", ownerror.description())
+        }
+    }
+}
+
+impl Error for ModelError {
+    fn description(&self) -> &str {
+        match *self {
+            ModelError::DieselError(ref err) => err.description(),
+            ModelError::DieselConnectionError(ref err) => err.description(),
+            ModelError::ConnectionPoolError(ref err) => err.description(),
+            ModelError::UserExists => "user already exists"
+        }
+    }
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ModelError::DieselError(ref err) => Some(err),
+            ModelError::DieselConnectionError(ref err) => Some(err),
+            ModelError::ConnectionPoolError(ref err) => Some(err),
+            ModelError::UserExists => None
+        }
+    }
+}
+
+pub type ModelResult<T> = Result<T, ModelError>;
 
 pub struct Model {
     pool: Pool,
@@ -40,10 +110,24 @@ impl Model {
         self.counter.load(Ordering::Relaxed)
     }
 
-    pub fn users(&self) -> Result<Vec<models::User>, Error> {
+    pub fn users(&self) -> ModelResult<Vec<models::User>> {
         let conn = self.pool.get()?;
         use schema::users::dsl::users;
-        let v = users.load::<models::User>(&*conn)?;
-        Ok(v)
+        Ok(users.load::<models::User>(&*conn)?)
+    }
+    pub fn register(&self, name: &str, email: &str, password: &str ) -> ModelResult<()> {
+        let conn = self.pool.get()?;
+        use schema::users;
+        let user = users::table.filter(users::name.eq(name)).limit(1).load::<models::User>(&*conn)?;
+        if user.len() > 0 {
+           Err(ModelError::UserExists)
+        } else {
+            diesel::insert(&models::NewUser {
+                name: name,
+                email: email,
+                password_hash: password
+            }).into(users::table).execute(&*conn)?;
+            Ok(())
+        }
     }
 }

@@ -16,6 +16,7 @@ dotenv = "*"
 r2d2-diesel="*"
 r2d2="*"
 time="*"
+lazy_static="*"
 
 [dependencies.rocket_contrib]
 version="*"

@@ -6,11 +6,6 @@ use diesel::prelude::LimitDsl;
 use diesel::prelude::ExecuteDsl;
 use diesel::prelude::FilterDsl;
 use diesel::ExpressionMethods;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::Hash;
-use std::hash::Hasher;
-use dotenv::dotenv;
-use std::env;
 use time;
 use super::db::schema::users;
 use super::error::ModelError;
@@ -20,11 +15,12 @@ use super::db::conn::init_pool;
 use super::db::models::NewUser;
 use super::db::models::UserFull;
 use super::User;
+use super::settings::SETTINGS;
+use kit::hash;
 
 pub struct Model {
     pool: Pool,
     counter: AtomicUsize,
-    secret: u64,
 }
 
 #[derive(Hash, Debug)]
@@ -55,24 +51,11 @@ pub struct AuthInfo {
     expires: i64,
 }
 
-fn hash<T>(v: &T) -> u64
-where
-    T: Hash,
-{
-    let mut s = DefaultHasher::new();
-    v.hash(&mut s);
-    s.finish()
-}
-
 impl Model {
     pub fn new() -> Model {
-        dotenv().expect("Can't open .env");
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
-        let secret = env::var("SECRET").expect("SECRET must be set");
         Model {
-            pool: init_pool(&database_url),
+            pool: init_pool(&SETTINGS.database_url),
             counter: AtomicUsize::new(0),
-            secret: hash(&secret),
         }
     }
     pub fn inc(&self) {
@@ -111,7 +94,7 @@ impl Model {
         let password_hash = hash(&PasswordHash {
             name: name,
             password: password,
-            secret: self.secret,
+            secret: SETTINGS.secret,
         }).to_string();
         diesel::insert(&NewUser {
             name: name,
@@ -138,7 +121,7 @@ impl Model {
         let password_hash = hash(&PasswordHash {
             name: name,
             password: password,
-            secret: self.secret,
+            secret: SETTINGS.secret,
         }).to_string();
         if user.password_hash != password_hash {
             return Err(ModelError::PasswordWrong);
@@ -148,7 +131,7 @@ impl Model {
             name: name,
             expires: expires,
             extra_data: extra_data,
-            secret: self.secret,
+            secret: SETTINGS.secret,
         });
         Ok(AuthToken {
             name: name.to_string(),
@@ -164,7 +147,7 @@ impl Model {
             name: &token.name,
             expires: token.expires,
             extra_data: extra_data,
-            secret: self.secret,
+            secret: SETTINGS.secret,
         });
         if token.hash != token_hash {
             return Err(ModelError::AuthTokenInvalid);

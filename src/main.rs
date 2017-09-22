@@ -16,6 +16,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate time;
+#[macro_use]
+extern crate lazy_static;
 
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;

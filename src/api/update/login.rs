@@ -1,8 +1,9 @@
 use rocket::request::Form;
 use rocket::request::State;
+use rocket_contrib::Json;
 use maud::Markup;
 use kit::form::to_form;
-use app::Model;
+use app::{Model, ModelResult, AuthToken};
 
 #[derive(FromForm, Default, Serialize)]
 pub struct Login {
@@ -15,8 +16,8 @@ pub fn get() -> Markup {
     to_form(&Login::default())
 }
 
-#[post("/login", data = "<_data>")]
-pub fn post( model: State<Model>, _data: Form<Login>) -> String {
-    model.inc();
-    model.get().to_string()
+#[post("/login", data = "<data>")]
+pub fn post(model: State<Model>, data: Form<Login>) -> Json<ModelResult<AuthToken>> {
+    let form = data.get();
+    Json(model.login(&form.name, &form.password, "", 60) )
 }

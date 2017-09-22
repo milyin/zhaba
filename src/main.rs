@@ -14,6 +14,7 @@ extern crate rocket_contrib;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate time;
 
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;

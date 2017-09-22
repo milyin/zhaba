@@ -9,7 +9,11 @@ pub enum ModelError {
     DieselError(diesel::result::Error),
     DieselConnectionError(diesel::result::ConnectionError),
     ConnectionPoolError(r2d2::GetTimeout),
-    UserExists
+    UserExists,
+    UserNotFound,
+    PasswordWrong,
+    AuthTokenExpired,
+    AuthTokenInvalid
 }
 
 impl<'v> Serialize for ModelError {
@@ -53,7 +57,11 @@ impl Error for ModelError {
             ModelError::DieselError(ref err) => err.description(),
             ModelError::DieselConnectionError(ref err) => err.description(),
             ModelError::ConnectionPoolError(ref err) => err.description(),
-            ModelError::UserExists => "user already exists"
+            ModelError::UserExists => "user already exists",
+            ModelError::UserNotFound => "user not found",
+            ModelError::PasswordWrong => "wrong password",
+            ModelError::AuthTokenExpired => "session expired",
+            ModelError::AuthTokenInvalid => "session invalid"
         }
     }
     fn cause(&self) -> Option<&Error> {
@@ -61,7 +69,7 @@ impl Error for ModelError {
             ModelError::DieselError(ref err) => Some(err),
             ModelError::DieselConnectionError(ref err) => Some(err),
             ModelError::ConnectionPoolError(ref err) => Some(err),
-            ModelError::UserExists => None
+            _ => None,
         }
     }
 }

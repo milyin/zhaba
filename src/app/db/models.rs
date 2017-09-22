@@ -1,11 +1,17 @@
 use super::schema::users;
 
-#[derive(Queryable, Serialize)]
-pub struct User {
+#[derive(Queryable)]
+pub struct UserFull {
     pub id: i32,
     pub name: String,
     pub email: String,
     pub password_hash: String,
+}
+
+#[derive(Queryable, Serialize)]
+pub struct User {
+    pub name: String,
+    pub email: String,
 }
 
 #[derive(Insertable)]

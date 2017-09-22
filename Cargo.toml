@@ -6,6 +6,7 @@ authors = ["Michael.Ilyin <milyin@gmail.com>"]
 [dependencies]
 serde="*"
 serde_derive="*"
+serde_json="*"
 maud = { version = "*", features = ["rocket"] }
 rocket = "*"
 rocket_codegen = "*"

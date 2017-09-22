@@ -12,6 +12,7 @@ extern crate r2d2_diesel;
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
+extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate time;
@@ -75,13 +76,20 @@ fn main() {
         .manage(init_pool())
         .manage(Model::new())
         .mount(
-            "/",
+            "/view",
+            routes![
+                api::view::users::get,
+                api::view::login::get,
+            ],
+        )
+        .mount("/query", routes![])
+        .mount(
+            "/update",
             routes![
                 api::update::login::get,
                 api::update::login::post,
                 api::update::register::get,
                 api::update::register::post,
-                api::view::users::get,
             ],
         )
         .launch();

@@ -2,6 +2,7 @@
 address = "0.0.0.0"
 port = 8000
 log = "normal"
+secret_key = "cAydpmVkPxtttjiPlq2jlmV+RtF1TA7b757gW8J9h/0="
 
 [production]
 address = "0.0.0.0"

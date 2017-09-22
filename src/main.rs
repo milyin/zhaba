@@ -88,6 +88,8 @@ fn main() {
             routes![
                 api::update::login::get,
                 api::update::login::post,
+                api::update::logout::get,
+                api::update::logout::post,
                 api::update::register::get,
                 api::update::register::post,
             ],

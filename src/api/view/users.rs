@@ -5,6 +5,6 @@ use app::ModelResult;
 use app::User;
 
 #[get("/users")]
-fn get(model:State<Model>) -> Json<ModelResult<Vec<User>>> {
+fn get(model: State<Model>) -> Json<ModelResult<Vec<User>>> {
     Json(model.users())
 }

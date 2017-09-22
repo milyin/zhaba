@@ -13,11 +13,14 @@ pub enum ModelError {
     UserNotFound,
     PasswordWrong,
     AuthTokenExpired,
-    AuthTokenInvalid
+    AuthTokenInvalid,
 }
 
 impl<'v> Serialize for ModelError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S:Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_str(&self.to_string())
     }
 }
@@ -46,7 +49,7 @@ impl fmt::Display for ModelError {
             ModelError::DieselError(ref err) => err.fmt(f),
             ModelError::DieselConnectionError(ref err) => err.fmt(f),
             ModelError::ConnectionPoolError(ref err) => err.fmt(f),
-            ref ownerror => write!(f, "{}", ownerror.description())
+            ref ownerror => write!(f, "{}", ownerror.description()),
         }
     }
 }
@@ -61,7 +64,7 @@ impl Error for ModelError {
             ModelError::UserNotFound => "user not found",
             ModelError::PasswordWrong => "wrong password",
             ModelError::AuthTokenExpired => "session expired",
-            ModelError::AuthTokenInvalid => "session invalid"
+            ModelError::AuthTokenInvalid => "session invalid",
         }
     }
     fn cause(&self) -> Option<&Error> {

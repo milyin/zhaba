@@ -31,9 +31,7 @@ pub mod kit;
 pub mod app;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
-pub struct DbConn(
-    pub r2d2::PooledConnection<ConnectionManager<SqliteConnection>>,
-);
+pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<SqliteConnection>>);
 
 /// Attempts to retrieve a single connection from the managed database pool. If
 /// no pool is currently managed, fails with an `InternalServerError` status. If
@@ -83,7 +81,7 @@ fn main() {
                 api::update::login::post,
                 api::update::register::get,
                 api::update::register::post,
-                api::view::users::get
+                api::view::users::get,
             ],
         )
         .launch();

@@ -22,7 +22,7 @@ use super::User;
 pub struct Model {
     pool: Pool,
     counter: AtomicUsize,
-    secret: u64
+    secret: u64,
 }
 
 #[derive(Hash)]
@@ -44,11 +44,10 @@ struct PasswordHash<'a> {
 pub struct AuthToken {
     name: String,
     expires: i64,
-    hash: u64
+    hash: u64,
 }
 
 impl Model {
-
     pub fn new() -> Model {
         dotenv().expect("Can't open .env");
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
@@ -58,11 +57,11 @@ impl Model {
         Model {
             pool: init_pool(&database_url),
             counter: AtomicUsize::new(0),
-            secret: s.finish()
+            secret: s.finish(),
         }
     }
     pub fn inc(&self) {
-        self.counter.fetch_add(1,Ordering::Relaxed);
+        self.counter.fetch_add(1, Ordering::Relaxed);
     }
     pub fn get(&self) -> usize {
         self.counter.load(Ordering::Relaxed)
@@ -72,10 +71,15 @@ impl Model {
         let conn = self.pool.get()?;
         Ok(users::table.load::<User>(&*conn)?)
     }
-    pub fn register(&self, name: &str, email: &str, password: &str ) -> ModelResult<()> {
+    pub fn register(&self, name: &str, email: &str, password: &str) -> ModelResult<()> {
         let conn = self.pool.get()?;
-        let user = users::table.filter(users::name.eq(name)).limit(1).load::<User>(&*conn)?;
-        if user.len() > 0 { return Err(ModelError::UserExists) };
+        let user = users::table
+            .filter(users::name.eq(name))
+            .limit(1)
+            .load::<User>(&*conn)?;
+        if user.len() > 0 {
+            return Err(ModelError::UserExists);
+        };
         let mut s = DefaultHasher::new();
         PasswordHash {
             name: name,
@@ -86,12 +90,20 @@ impl Model {
             name: name,
             email: email,
             password_hash: &s.finish().to_string(),
-        }).into(users::table).execute(&*conn)?;
+        }).into(users::table)
+            .execute(&*conn)?;
         Ok(())
     }
-    pub fn login(&self, name: &str, password: &str, extra_data: &str, duration: i64) -> ModelResult<AuthToken> {
+    pub fn login(
+        &self,
+        name: &str,
+        password: &str,
+        extra_data: &str,
+        duration: u32,
+    ) -> ModelResult<AuthToken> {
         let conn = self.pool.get()?;
-        let user : User = users::table.filter(users::name.eq(name))
+        let user: User = users::table
+            .filter(users::name.eq(name))
             .limit(1)
             .load::<User>(&*conn)?
             .pop()
@@ -102,31 +114,36 @@ impl Model {
             password: password,
             secret: self.secret,
         }.hash(&mut s);
-        if user.password_hash != s.finish().to_string() { return Err(ModelError::PasswordWrong) };
-        let expires = time::now_utc().to_timespec().sec + duration;
+        if user.password_hash != s.finish().to_string() {
+            return Err(ModelError::PasswordWrong);
+        };
+        let expires = time::now_utc().to_timespec().sec + duration as i64;
         SessionData {
             name: name,
             expires: expires,
             extra_data: extra_data,
             secret: self.secret,
         }.hash(&mut s);
-        Ok(AuthToken{
+        Ok(AuthToken {
             name: name.to_string(),
             expires: expires,
-            hash: s.finish()
+            hash: s.finish(),
         })
     }
     pub fn authorize(&self, token: &AuthToken, extra_data: &str) -> ModelResult<()> {
         let mut s = DefaultHasher::new();
-        if token.expires > time::now_utc().to_timespec().sec { return Err(ModelError::AuthTokenExpired)};
+        if token.expires > time::now_utc().to_timespec().sec {
+            return Err(ModelError::AuthTokenExpired);
+        };
         SessionData {
             name: &token.name,
-            expires:  token.expires,
+            expires: token.expires,
             extra_data: extra_data,
             secret: self.secret,
         }.hash(&mut s);
-        if token.hash != s.finish() { return Err(ModelError::AuthTokenInvalid)}
+        if token.hash != s.finish() {
+            return Err(ModelError::AuthTokenInvalid);
+        }
         Ok(())
     }
 }
-

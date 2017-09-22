@@ -9,6 +9,7 @@ use app::{Model, ModelResult, AuthToken};
 pub struct Login {
     name: String,
     password: String,
+    duration: u32,
 }
 
 #[get("/login")]
@@ -19,5 +20,5 @@ pub fn get() -> Markup {
 #[post("/login", data = "<data>")]
 pub fn post(model: State<Model>, data: Form<Login>) -> Json<ModelResult<AuthToken>> {
     let form = data.get();
-    Json(model.login(&form.name, &form.password, "", 60) )
+    Json(model.login(&form.name, &form.password, "", form.duration))
 }

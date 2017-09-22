@@ -8,6 +8,8 @@ use diesel::ExpressionMethods;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
 use std::hash::Hasher;
+use dotenv::dotenv;
+use std::env;
 use time;
 use super::db::schema::users;
 use super::error::ModelError;
@@ -48,10 +50,15 @@ pub struct AuthToken {
 impl Model {
 
     pub fn new() -> Model {
+        dotenv().expect("Can't open .env");
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
+        let secret = env::var("SECRET").expect("SECRET must be set");
+        let mut s = DefaultHasher::new();
+        secret.hash(&mut s);
         Model {
-            pool: init_pool(),
+            pool: init_pool(&database_url),
             counter: AtomicUsize::new(0),
-            secret: 0xDEADBEEF // TODO: take it from extra config
+            secret: s.finish()
         }
     }
     pub fn inc(&self) {

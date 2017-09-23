@@ -4,7 +4,7 @@ use rocket_contrib::Json;
 use rocket::http::{Cookie, Cookies};
 use maud::Markup;
 use kit::form::to_form;
-use app::{Model, ModelResult, AuthInfo};
+use app::{Model, ModelResult, AuthInfo, COOKIE_TOKEN};
 use serde_json;
 
 #[derive(FromForm, Default, Serialize)]
@@ -28,7 +28,7 @@ pub fn post(
     let form = data.get();
     Json((|| {
          let token = model.login(&form.name, &form.password, "", form.duration)?;
-         cookies.add_private(Cookie::new("token", serde_json::to_string(&token)?));
-         model.authorize(token, "")
+         cookies.add_private(Cookie::new(COOKIE_TOKEN, serde_json::to_string(&token)?));
+         Model::authorize(token, "")
      })())
 }

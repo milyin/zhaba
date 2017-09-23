@@ -6,7 +6,13 @@ use diesel::prelude::LimitDsl;
 use diesel::prelude::ExecuteDsl;
 use diesel::prelude::FilterDsl;
 use diesel::ExpressionMethods;
+use rocket::request;
+use rocket::request::Request;
+use rocket::request::FromRequest;
+use rocket::http::Status;
+use rocket::outcome::IntoOutcome;
 use time;
+use serde_json;
 use super::db::schema::users;
 use super::error::ModelError;
 use super::error::ModelResult;
@@ -15,7 +21,8 @@ use super::db::conn::init_pool;
 use super::db::models::NewUser;
 use super::db::models::UserFull;
 use super::User;
-use super::settings::SETTINGS;
+use super::settings::ENV;
+use super::settings::COOKIE_TOKEN;
 use kit::hash;
 
 pub struct Model {
@@ -54,7 +61,7 @@ pub struct AuthInfo {
 impl Model {
     pub fn new() -> Model {
         Model {
-            pool: init_pool(&SETTINGS.database_url),
+            pool: init_pool(&ENV.database_url),
             counter: AtomicUsize::new(0),
         }
     }
@@ -94,7 +101,7 @@ impl Model {
         let password_hash = hash(&PasswordHash {
             name: name,
             password: password,
-            secret: SETTINGS.secret,
+            secret: ENV.secret,
         }).to_string();
         diesel::insert(&NewUser {
             name: name,
@@ -121,7 +128,7 @@ impl Model {
         let password_hash = hash(&PasswordHash {
             name: name,
             password: password,
-            secret: SETTINGS.secret,
+            secret: ENV.secret,
         }).to_string();
         if user.password_hash != password_hash {
             return Err(ModelError::PasswordWrong);
@@ -131,7 +138,7 @@ impl Model {
             name: name,
             expires: expires,
             extra_data: extra_data,
-            secret: SETTINGS.secret,
+            secret: ENV.secret,
         });
         Ok(AuthToken {
             name: name.to_string(),
@@ -139,7 +146,7 @@ impl Model {
             hash: token_hash,
         })
     }
-    pub fn authorize(&self, token: AuthToken, extra_data: &str) -> ModelResult<AuthInfo> {
+    pub fn authorize(token: AuthToken, extra_data: &str) -> ModelResult<AuthInfo> {
         if time::now_utc().to_timespec().sec > token.expires {
             return Err(ModelError::AuthTokenExpired);
         };
@@ -147,7 +154,7 @@ impl Model {
             name: &token.name,
             expires: token.expires,
             extra_data: extra_data,
-            secret: SETTINGS.secret,
+            secret: ENV.secret,
         });
         if token.hash != token_hash {
             return Err(ModelError::AuthTokenInvalid);
@@ -156,5 +163,18 @@ impl Model {
             name: token.name,
             expires: token.expires,
         })
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for AuthInfo {
+    type Error = ModelError;
+    fn from_request(request: &'a Request) -> request::Outcome<Self, Self::Error> {
+        (|| {
+             let cookie = request.cookies().get_private(COOKIE_TOKEN).ok_or(
+                ModelError::AuthTokenNotFound,
+            )?;
+             let token: AuthToken = serde_json::from_str(cookie.value())?;
+             Model::authorize(token, "")
+         })().into_outcome(Status::Unauthorized)
     }
 }

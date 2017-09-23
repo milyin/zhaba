@@ -12,4 +12,3 @@ where
     v.hash(&mut s);
     s.finish()
 }
-

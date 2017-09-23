@@ -2,11 +2,10 @@ use rocket_contrib::Json;
 use rocket::http::{Cookie, Cookies};
 use maud::Markup;
 use kit::form::to_form;
-use app::ModelResult;
+use app::{ModelResult, COOKIE_TOKEN};
 
 #[derive(FromForm, Default, Serialize)]
-pub struct Logout {
-}
+pub struct Logout {}
 
 #[get("/logout")]
 pub fn get() -> Markup {
@@ -14,9 +13,7 @@ pub fn get() -> Markup {
 }
 
 #[post("/logout")]
-pub fn post(
-    mut cookies: Cookies,
-) -> Json<ModelResult<()>> {
-    cookies.remove_private(Cookie::named("token"));
+pub fn post(mut cookies: Cookies) -> Json<ModelResult<()>> {
+    cookies.remove_private(Cookie::named(COOKIE_TOKEN));
     Json(Ok(()))
 }

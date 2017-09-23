@@ -14,13 +14,16 @@ use time;
 use serde_json;
 use super::db::schema::user;
 use super::db::schema::user_info;
+use super::db::schema::post;
 use super::error::ModelError;
 use super::error::ModelResult;
 use super::db::conn::Pool;
 use super::db::conn::init_pool;
 use super::db::models::NewUser;
+use super::db::models::NewPost;
 use super::db::models::User;
-use super::UserInfo;
+use super::db::models::UserInfo;
+use super::db::models::Post;
 use super::settings::ENV;
 use super::settings::COOKIE_TOKEN;
 use kit::hash;
@@ -32,7 +35,7 @@ pub struct Model {
 
 #[derive(Hash, Debug)]
 struct TokenHash<'a> {
-    name: &'a str,
+    user_id: i32,
     expires: i64,
     extra_data: &'a str,
     secret: u64,
@@ -47,14 +50,14 @@ struct PasswordHash<'a> {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthToken {
-    name: String,
+    user_id: i32,
     expires: i64,
     hash: u64,
 }
 
 #[derive(Serialize)]
 pub struct AuthInfo {
-    name: String,
+    user_id: i32,
     expires: i64,
 }
 
@@ -132,13 +135,13 @@ impl Model {
         };
         let expires = time::now_utc().to_timespec().sec + duration as i64;
         let token_hash = hash(&TokenHash {
-            name: name,
+            user_id: user.id,
             expires: expires,
             extra_data: extra_data,
             secret: ENV.secret,
         });
         Ok(AuthToken {
-            name: name.to_string(),
+            user_id: user.id,
             expires: expires,
             hash: token_hash,
         })
@@ -148,7 +151,7 @@ impl Model {
             return Err(ModelError::AuthTokenExpired);
         };
         let token_hash = hash(&TokenHash {
-            name: &token.name,
+            user_id: token.user_id,
             expires: token.expires,
             extra_data: extra_data,
             secret: ENV.secret,
@@ -157,9 +160,24 @@ impl Model {
             return Err(ModelError::AuthTokenInvalid);
         }
         Ok(AuthInfo {
-            name: token.name,
+            user_id: token.user_id,
             expires: token.expires,
         })
+    }
+    pub fn post(&self, auth: &AuthInfo, title: &str, body: &str) -> ModelResult<()> {
+        let conn = self.pool.get()?;
+        diesel::insert(&NewPost {
+            user_id: auth.user_id,
+            created: time::now_utc().to_timespec().sec,
+            title: title,
+            body: body,
+        }).into(post::table)
+            .execute(&*conn)?;
+        Ok(())
+    }
+    pub fn posts(&self) -> ModelResult<Vec<Post>> {
+        let conn = self.pool.get()?;
+        Ok(post::table.load::<Post>(&*conn)?)
     }
 }
 

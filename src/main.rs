@@ -82,6 +82,7 @@ fn main() {
             routes![
                 api::view::users::get,
                 api::view::login::get,
+                api::view::posts::get,
             ],
         )
         .mount("/query", routes![])
@@ -94,6 +95,8 @@ fn main() {
                 api::update::logout::post,
                 api::update::register::get,
                 api::update::register::post,
+                api::update::post::get,
+                api::update::post::post,
             ],
         )
         .launch();

@@ -1,6 +1,5 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use diesel;
-use diesel::prelude::SelectDsl;
 use diesel::prelude::LoadDsl;
 use diesel::prelude::LimitDsl;
 use diesel::prelude::ExecuteDsl;
@@ -13,14 +12,15 @@ use rocket::http::Status;
 use rocket::outcome::IntoOutcome;
 use time;
 use serde_json;
-use super::db::schema::users;
+use super::db::schema::user;
+use super::db::schema::user_info;
 use super::error::ModelError;
 use super::error::ModelResult;
 use super::db::conn::Pool;
 use super::db::conn::init_pool;
 use super::db::models::NewUser;
-use super::db::models::UserFull;
-use super::User;
+use super::db::models::User;
+use super::UserInfo;
 use super::settings::ENV;
 use super::settings::COOKIE_TOKEN;
 use kit::hash;
@@ -72,29 +72,26 @@ impl Model {
         self.counter.load(Ordering::Relaxed)
     }
 
-    pub fn user(&self, name: &str) -> ModelResult<User> {
+    pub fn user(&self, name: &str) -> ModelResult<UserInfo> {
         let conn = self.pool.get()?;
-        users::table
-            .select((users::name, users::email))
-            .filter(users::name.eq(name))
+        user_info::table
+            .filter(user_info::name.eq(name))
             .limit(1)
-            .load::<User>(&*conn)?
+            .load::<UserInfo>(&*conn)?
             .pop()
             .ok_or(ModelError::UserNotFound)
     }
 
-    pub fn users(&self) -> ModelResult<Vec<User>> {
+    pub fn users(&self) -> ModelResult<Vec<UserInfo>> {
         let conn = self.pool.get()?;
-        Ok(users::table
-            .select((users::name, users::email))
-            .load::<User>(&*conn)?)
+        Ok(user_info::table.load::<UserInfo>(&*conn)?)
     }
     pub fn register(&self, name: &str, email: &str, password: &str) -> ModelResult<()> {
         let conn = self.pool.get()?;
-        let user = users::table
-            .filter(users::name.eq(name))
+        let user = user::table
+            .filter(user::name.eq(name))
             .limit(1)
-            .load::<UserFull>(&*conn)?;
+            .load::<User>(&*conn)?;
         if user.len() > 0 {
             return Err(ModelError::UserExists);
         };
@@ -102,12 +99,12 @@ impl Model {
             name: name,
             password: password,
             secret: ENV.secret,
-        }).to_string();
+        }) as i64;
         diesel::insert(&NewUser {
             name: name,
             email: email,
-            password_hash: &password_hash,
-        }).into(users::table)
+            password_hash: password_hash,
+        }).into(user::table)
             .execute(&*conn)?;
         Ok(())
     }
@@ -119,17 +116,17 @@ impl Model {
         duration: u32,
     ) -> ModelResult<AuthToken> {
         let conn = self.pool.get()?;
-        let user: UserFull = users::table
-            .filter(users::name.eq(name))
+        let user: User = user::table
+            .filter(user::name.eq(name))
             .limit(1)
-            .load::<UserFull>(&*conn)?
+            .load::<User>(&*conn)?
             .pop()
             .ok_or(ModelError::UserNotFound)?;
         let password_hash = hash(&PasswordHash {
             name: name,
             password: password,
             secret: ENV.secret,
-        }).to_string();
+        }) as i64;
         if user.password_hash != password_hash {
             return Err(ModelError::PasswordWrong);
         };

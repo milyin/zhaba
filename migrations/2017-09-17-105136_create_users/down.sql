@@ -1,1 +1,2 @@
-drop table users
+drop table user;
+drop view user_info;

@@ -12,9 +12,9 @@ use rocket::http::Status;
 use rocket::outcome::IntoOutcome;
 use time;
 use serde_json;
-use super::db::schema::user;
-use super::db::schema::user_info;
-use super::db::schema::post;
+use super::db::schema::users;
+use super::db::schema::user_infos;
+use super::db::schema::posts;
 use super::error::ModelError;
 use super::error::ModelResult;
 use super::db::conn::Pool;
@@ -77,8 +77,8 @@ impl Model {
 
     pub fn user(&self, name: &str) -> ModelResult<UserInfo> {
         let conn = self.pool.get()?;
-        user_info::table
-            .filter(user_info::name.eq(name))
+        user_infos::table
+            .filter(user_infos::name.eq(name))
             .limit(1)
             .load::<UserInfo>(&*conn)?
             .pop()
@@ -87,12 +87,12 @@ impl Model {
 
     pub fn users(&self) -> ModelResult<Vec<UserInfo>> {
         let conn = self.pool.get()?;
-        Ok(user_info::table.load::<UserInfo>(&*conn)?)
+        Ok(user_infos::table.load::<UserInfo>(&*conn)?)
     }
     pub fn register(&self, name: &str, email: &str, password: &str) -> ModelResult<()> {
         let conn = self.pool.get()?;
-        let user = user::table
-            .filter(user::name.eq(name))
+        let user = users::table
+            .filter(users::name.eq(name))
             .limit(1)
             .load::<User>(&*conn)?;
         if user.len() > 0 {
@@ -107,7 +107,7 @@ impl Model {
             name: name,
             email: email,
             password_hash: password_hash,
-        }).into(user::table)
+        }).into(users::table)
             .execute(&*conn)?;
         Ok(())
     }
@@ -119,8 +119,8 @@ impl Model {
         duration: u32,
     ) -> ModelResult<AuthToken> {
         let conn = self.pool.get()?;
-        let user: User = user::table
-            .filter(user::name.eq(name))
+        let user: User = users::table
+            .filter(users::name.eq(name))
             .limit(1)
             .load::<User>(&*conn)?
             .pop()
@@ -164,20 +164,46 @@ impl Model {
             expires: token.expires,
         })
     }
-    pub fn post(&self, auth: &AuthInfo, title: &str, body: &str) -> ModelResult<()> {
+
+    pub fn get_post(&self, post_id: i32) -> ModelResult<Post> {
         let conn = self.pool.get()?;
+        posts::table
+            .filter(posts::id.eq(post_id))
+            .limit(1)
+            .load::<Post>(&*conn)?
+            .pop()
+            .ok_or(ModelError::PostNotFound)
+    }
+
+    pub fn new_post(&self, auth: &AuthInfo, title: &str, body: &str) -> ModelResult<()> {
+        let conn = self.pool.get()?;
+        let timestamp = time::now_utc().to_timespec().sec;
         diesel::insert(&NewPost {
             user_id: auth.user_id,
-            created: time::now_utc().to_timespec().sec,
+            created: timestamp,
+            edited: timestamp,
             title: title,
             body: body,
-        }).into(post::table)
+        }).into(posts::table)
             .execute(&*conn)?;
+        Ok(())
+    }
+    pub fn edit_post(&self, auth: &AuthInfo, post_id: i32, title: &str, body: &str) -> ModelResult<()> {
+        let conn = self.pool.get()?;
+        let post = self.get_post(post_id)?;
+        if post.user_id != auth.user_id { return Err(ModelError::AccessDenied)}; // TODO: implement roles
+        let timestamp = time::now_utc().to_timespec().sec;
+        diesel::update(posts::table).set(&Post {
+            edited: timestamp,
+            title: title.to_string(),
+            body: body.to_string(),
+            ..post
+        }).execute(&*conn)?;
         Ok(())
     }
     pub fn posts(&self) -> ModelResult<Vec<Post>> {
         let conn = self.pool.get()?;
-        Ok(post::table.load::<Post>(&*conn)?)
+        Ok(posts::table.load::<Post>(&*conn)?)
     }
 }
 

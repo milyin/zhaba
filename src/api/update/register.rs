@@ -7,9 +7,9 @@ use app::{Model, ModelResult};
 
 #[derive(FromForm, Default, Serialize)]
 pub struct Register {
-    pub name: String,
-    pub email: String,
-    pub password: String,
+    name: String,
+    email: String,
+    password: String,
 }
 
 #[get("/register")]

@@ -1,3 +1,3 @@
-drop table user;
-drop view user_info;
-drop table post;
+drop table users;
+drop view user_infos;
+drop table posts;

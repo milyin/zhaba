@@ -17,6 +17,8 @@ pub enum ModelError {
     AuthTokenExpired,
     AuthTokenInvalid,
     AuthTokenNotFound,
+    PostNotFound,
+    AccessDenied,
 }
 
 impl<'v> Serialize for ModelError {
@@ -76,6 +78,8 @@ impl Error for ModelError {
             ModelError::AuthTokenExpired => "authentication token expired",
             ModelError::AuthTokenInvalid => "authentication token invalid",
             ModelError::AuthTokenNotFound => "authentication token not found",
+            ModelError::PostNotFound => "post not found",
+            ModelError::AccessDenied => "access denied",
         }
     }
     fn cause(&self) -> Option<&Error> {

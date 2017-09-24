@@ -1,5 +1,6 @@
 #![feature(plugin, proc_macro, custom_derive, never_type)]
 #![plugin(rocket_codegen)]
+#![recursion_limit="128"]
 
 #[macro_use]
 extern crate diesel;
@@ -95,8 +96,10 @@ fn main() {
                 api::update::logout::post,
                 api::update::register::get,
                 api::update::register::post,
-                api::update::post::get,
-                api::update::post::post,
+                api::update::new_post::get,
+                api::update::new_post::post,
+                api::update::edit_post::get,
+                api::update::edit_post::post,
             ],
         )
         .launch();

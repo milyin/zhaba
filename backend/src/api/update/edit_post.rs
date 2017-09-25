@@ -5,7 +5,7 @@ use maud::Markup;
 use kit::form::to_form;
 use app::{Model, ModelResult, AuthInfo};
 
-#[derive(FromForm, Default, Serialize)]
+#[derive(FromForm, Default, Serialize, Deserialize)]
 pub struct EditPost {
     post_id: i32,
     title: String,
@@ -20,5 +20,11 @@ pub fn get() -> Markup {
 #[post("/edit_post", data = "<data>")]
 pub fn post(auth: AuthInfo, model: State<Model>, data: Form<EditPost>) -> Json<ModelResult<()>> {
     let form = data.get();
+    Json(model.edit_post(&auth, form.post_id, &form.title, &form.body))
+}
+
+#[post("/edit_post", data = "<data>")]
+pub fn post_json(auth: AuthInfo, model: State<Model>, data: Json<EditPost>) -> Json<ModelResult<()>> {
+    let form = data.into_inner();
     Json(model.edit_post(&auth, form.post_id, &form.title, &form.body))
 }

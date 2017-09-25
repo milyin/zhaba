@@ -188,17 +188,27 @@ impl Model {
             .execute(&*conn)?;
         Ok(())
     }
-    pub fn edit_post(&self, auth: &AuthInfo, post_id: i32, title: &str, body: &str) -> ModelResult<()> {
+    pub fn edit_post(
+        &self,
+        auth: &AuthInfo,
+        post_id: i32,
+        title: &str,
+        body: &str,
+    ) -> ModelResult<()> {
         let conn = self.pool.get()?;
         let post = self.get_post(post_id)?;
-        if post.user_id != auth.user_id { return Err(ModelError::AccessDenied)}; // TODO: implement roles
+        if post.user_id != auth.user_id {
+            return Err(ModelError::AccessDenied);
+        }; // TODO: implement roles
         let timestamp = time::now_utc().to_timespec().sec;
-        diesel::update(posts::table).set(&Post {
-            edited: timestamp,
-            title: title.to_string(),
-            body: body.to_string(),
-            ..post
-        }).execute(&*conn)?;
+        diesel::update(posts::table)
+            .set(&Post {
+                edited: timestamp,
+                title: title.to_string(),
+                body: body.to_string(),
+                ..post
+            })
+            .execute(&*conn)?;
         Ok(())
     }
     pub fn posts(&self) -> ModelResult<Vec<Post>> {

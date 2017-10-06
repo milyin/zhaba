@@ -7,6 +7,7 @@ import Form.Validate exposing (Validation)
 import Form.Validate as V
 import Form exposing (Form)
 import Form.Input
+import Form.Error exposing (Error)
 
 type alias FieldDesc e a =
     { label: String
@@ -16,11 +17,11 @@ type alias FieldDesc e a =
 
 -- utility functions for using FieldDesc instead of string field name in Form library
 
-field : FieldDesc e a -> Validation e a
-field desc = V.field desc.name desc.validation
+fielddesc : FieldDesc e a -> Validation e a
+fielddesc desc = V.field desc.name desc.validation
 
-andMap : FieldDesc e a -> Validation e (a -> b) -> Validation e b
-andMap desc partialValidation = V.andMap (field desc) partialValidation
+andMapDesc : FieldDesc e a -> Validation e (a -> b) -> Validation e b
+andMapDesc desc partialValidation = V.andMap (fielddesc desc) partialValidation
 
 getStateString : FieldDesc e a -> Form e o -> (FieldDesc e a, Form.FieldState e String)
 getStateString desc = \frm -> (desc, Form.getFieldAsString desc.name frm)
@@ -28,11 +29,29 @@ getStateString desc = \frm -> (desc, Form.getFieldAsString desc.name frm)
 getStateBool : FieldDesc e a -> Form e o -> (FieldDesc e a, Form.FieldState e Bool)
 getStateBool desc = \frm -> (desc, Form.getFieldAsBool desc.name frm)
 
+type Pair b = Pair b b
+isEqual : FieldDesc e b -> FieldDesc e b -> Error e -> a -> Validation e a
+isEqual desc1 desc2 err pass fields = let
+            pval = V.succeed Pair
+                |> andMapDesc desc1
+                |> andMapDesc desc2
+            fail = (V.field desc1.name <| V.fail err) fields
+        in case (pval fields) of
+            Ok (Pair v1 v2) ->
+                if v1 == v2
+                    then Ok pass
+                    else fail
+            Err _ -> Ok pass
+
+-- utility validation functions
+optional : Validation e String -> Validation e String
+optional v = V.oneOf [ V.emptyString, v ]
+
 -- default html representations for form fields
 
 errorFor : FieldDesc e a -> Form.FieldState e v -> Html msg
 errorFor desc state =
-    case state.liveError of
+    case state.error of
         Just error ->
             div [class "error" ] [ text (toString error)]
         Nothing ->

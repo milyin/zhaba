@@ -5,7 +5,7 @@ use maud::Markup;
 use kit::form::to_form;
 use app::{Model, ModelResult};
 
-#[derive(FromForm, Default, Serialize)]
+#[derive(FromForm, Default, Serialize, Deserialize)]
 pub struct Register {
     name: String,
     email: String,
@@ -20,5 +20,11 @@ pub fn get() -> Markup {
 #[post("/register", data = "<data>")]
 pub fn post(model: State<Model>, data: Form<Register>) -> Json<ModelResult<()>> {
     let form = data.get();
+    Json(model.register(&form.name, &form.email, &form.password))
+}
+
+#[post("/register", data = "<data>", rank=2)]
+pub fn post_json(model: State<Model>, data: Json<Register>) -> Json<ModelResult<()>> {
+    let form = data.into_inner();
     Json(model.register(&form.name, &form.email, &form.password))
 }

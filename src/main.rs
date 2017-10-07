@@ -62,10 +62,12 @@ fn main() {
                 api::update::logout::post,
                 api::update::register::get,
                 api::update::register::post,
+                api::update::register::post_json,
                 api::update::new_post::get,
                 api::update::new_post::post,
                 api::update::edit_post::get,
                 api::update::edit_post::post,
+                api::update::edit_post::post_json,
             ],
         )
         .launch();

@@ -16,8 +16,8 @@ import Maybe exposing (Maybe)
 
 type Msg
     = FormMsg Form.Msg
---    | Request (Http.Request String)
---    | Response String
+    | Submit
+    | Response (Result Http.Error String)
 
 type alias Register =
     { name: String
@@ -63,6 +63,10 @@ init = Form.initial [] validation
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
     FormMsg m -> (Form.update validation m model, Cmd.none)
+    Submit -> case Form.getOutput model of
+        Just r -> (model, Http.send Response <| postForm r)
+        Nothing -> (model, Cmd.none)
+    Response resp -> (model, Cmd.none)
 
 view : Model -> Html Msg
 view model = let
@@ -77,7 +81,7 @@ view model = let
             , inputWith FormMsg Input.passwordInput password
             , inputWith FormMsg Input.passwordInput password2
             , button
-                [ onClick (FormMsg Form.Submit) ]
+                [ onClick Submit ]
                 [ text "Submit" ]
             ]
 

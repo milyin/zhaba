@@ -17,7 +17,7 @@ pub fn get() -> Markup {
     to_form(&EditPost::default())
 }
 
-#[post("/edit_post", data = "<data>")]
+#[post("/edit_post", data = "<data>", rank=2)]
 pub fn post(auth: AuthInfo, model: State<Model>, data: Form<EditPost>) -> Json<ModelResult<()>> {
     let form = data.get();
     Json(model.edit_post(

@@ -48,7 +48,10 @@ postForm r =
 
 type MyError = PasswordMismatch
 
-type alias Model = Form MyError Register
+type alias Model =
+    { form: Form MyError Register
+    , response: String
+    }
 
 validation : Validation MyError Register
 validation = succeed Register
@@ -58,22 +61,25 @@ validation = succeed Register
     |> andMapDesc xPASSWORD
 
 init : Model
-init = Form.initial [] validation
+init =
+    { form = Form.initial [] validation
+    , response = ""
+    }
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
-    FormMsg m -> (Form.update validation m model, Cmd.none)
-    Submit -> case Form.getOutput model of
+    FormMsg m -> ({ model | form = Form.update validation m model.form}, Cmd.none)
+    Submit -> case Form.getOutput model.form of
         Just r -> (model, Http.send Response <| postForm r)
         Nothing -> (model, Cmd.none)
-    Response resp -> (model, Cmd.none)
+    Response resp -> ({model | response = (toString resp) }, Cmd.none)
 
 view : Model -> Html Msg
 view model = let
-        name = getStateString xNAME model
-        email = getStateString xEMAIL model
-        password = getStateString xPASSWORD model
-        password2 = getStateString xPASSWORD2 model
+        name = getStateString xNAME model.form
+        email = getStateString xEMAIL model.form
+        password = getStateString xPASSWORD model.form
+        password2 = getStateString xPASSWORD2 model.form
     in
         div []
             [ inputWith FormMsg Input.textInput name
@@ -83,6 +89,7 @@ view model = let
             , button
                 [ onClick Submit ]
                 [ text "Submit" ]
+            , div [] [ text model.response ]
             ]
 
 

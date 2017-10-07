@@ -3,8 +3,9 @@ module Zhaba exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (style)
 import Html.Events exposing (..)
-import Register exposing (..)
+import Register
 import Form exposing (Form)
+import Maybe exposing (..)
 
 main = Html.program
     { init = init
@@ -13,7 +14,7 @@ main = Html.program
     , subscriptions = subscriptions
     }
 
-type Msg = Nop | RegisterFormMsg Form.Msg
+type Msg = Nop | RegisterFormMsg Register.Msg
 
 type alias Model =
     { registerForm : Register.Model
@@ -27,13 +28,20 @@ init = ({
 view : Model -> Html Msg
 view model =  Html.map RegisterFormMsg (Register.view model.registerForm)
 
+translate
+    : (subMsg -> Msg)
+    -> (subModel -> Model)
+    -> (subModel, Cmd subMsg)
+    -> (Model, Cmd Msg)
+translate translMsg  updModel (subModel, msg) =
+    (updModel subModel, Cmd.map translMsg msg)
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Nop -> (model, Cmd.none)
         RegisterFormMsg msg ->
-            ( { model | registerForm = Register.update msg model.registerForm }, Cmd.none )
-
+            Register.update msg model.registerForm |> translate RegisterFormMsg (\m -> {model | registerForm = m})
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none

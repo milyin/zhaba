@@ -57,8 +57,8 @@ errorFor desc state =
         Nothing ->
             text ""
 
-inputWith : Form.Input.Input e v -> (FieldDesc e a, Form.FieldState e v) -> Html Form.Msg
-inputWith formInput (desc, state) = div []
+inputWith : (Form.Msg -> m) -> Form.Input.Input e v -> (FieldDesc e a, Form.FieldState e v) -> Html m
+inputWith msgmap formInput (desc, state) = Html.map msgmap <| div []
     [ label [] [ text desc.label]
     , formInput state []
     , errorFor desc state

@@ -26,5 +26,4 @@ repl-temp-*
 .idea
 .vscode
 *.iml
-static/elm.js
-static/elm.css
+static/*

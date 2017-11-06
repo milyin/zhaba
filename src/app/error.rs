@@ -1,6 +1,5 @@
 use std::fmt;
 use std::error::Error;
-use serde::ser::{Serialize, Serializer};
 use serde_json;
 use diesel;
 use r2d2;
@@ -19,15 +18,6 @@ pub enum ModelError {
     AuthTokenNotFound,
     PostNotFound,
     AccessDenied,
-}
-
-impl<'v> Serialize for ModelError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
 }
 
 impl From<diesel::result::Error> for ModelError {
@@ -93,4 +83,3 @@ impl Error for ModelError {
     }
 }
 
-pub type ModelResult<T> = Result<T, ModelError>;

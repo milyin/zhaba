@@ -7,7 +7,7 @@ pub struct Env {
     pub secret: u64,
 }
 
-pub const COOKIE_TOKEN: &'static str = "token";
+pub const AUTH_TOKEN_NAME: &'static str = "token";
 
 lazy_static! {
     pub static ref ENV : Env = {

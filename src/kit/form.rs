@@ -8,6 +8,31 @@ struct FormSerializer {
     values: Vec<String>,
 }
 
+const SUBMIT_JSON : &'static str = r#"
+event.preventDefault();
+var frm = this.form;
+var obj = {};
+for( var i = 0; i < form.length; ++i ) {
+    var element = form[i];
+    if( element.name ) {
+        obj[ element.name ] = element.value;
+    }
+}
+var json = JSON.stringify(obj);
+var div = document.createElement("div");
+div.innerHTML = json;
+document.body.appendChild(div);
+var xhr = new XMLHttpRequest();
+xhr.open(frm.method, frm.action, true);
+xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+xhr.send(json);
+xhr.onloadend = function() {
+  var div = document.createElement("div");
+  div.innerHTML = xhr.responseText;
+  document.body.appendChild(div);
+}
+"#;
+
 pub fn to_form<T>(value: &T) -> Markup
 where
     T: Serialize,
@@ -21,7 +46,7 @@ where
                     input name = (nv.0) value = (nv.1);
                     br;
                 }
-                input type = "submit";
+                input type = "submit" onclick = (SUBMIT_JSON);
             }
         }
     } else {

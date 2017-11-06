@@ -16,7 +16,6 @@ use super::db::schema::users;
 use super::db::schema::user_infos;
 use super::db::schema::posts;
 use super::error::ModelError;
-use super::error::ModelResult;
 use super::db::conn::Pool;
 use super::db::conn::init_pool;
 use super::db::models::NewUser;
@@ -25,8 +24,9 @@ use super::db::models::User;
 use super::db::models::UserInfo;
 use super::db::models::Post;
 use super::settings::ENV;
-use super::settings::COOKIE_TOKEN;
+use super::settings::AUTH_TOKEN_NAME;
 use kit::hash;
+use rocket::http::{Cookie, Cookies};
 
 pub struct Model {
     pool: Pool,
@@ -60,6 +60,8 @@ pub struct AuthInfo {
     user_id: i32,
     expires: i64,
 }
+
+pub type ModelResult<T> = Result<T, ModelError>;
 
 impl Model {
     pub fn new() -> Model {
@@ -221,11 +223,28 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthInfo {
     type Error = ModelError;
     fn from_request(request: &'a Request) -> request::Outcome<Self, Self::Error> {
         (|| {
-             let cookie = request.cookies().get_private(COOKIE_TOKEN).ok_or(
+             let cookie = request.cookies().get_private(AUTH_TOKEN_NAME).ok_or(
                 ModelError::AuthTokenNotFound,
             )?;
              let token: AuthToken = serde_json::from_str(cookie.value())?;
              Model::authorize(token, "")
          })().into_outcome(Status::Unauthorized)
     }
+}
+
+pub fn set_auth_cookie(
+    model: &Model,
+    cookies: &mut Cookies,
+    name: &str,
+    password: &str,
+    extra_data: &str,
+    duration: u32,
+) -> ModelResult<AuthInfo> {
+    let token = model.login(name, password, extra_data, duration)?;
+    cookies.add_private(Cookie::new(AUTH_TOKEN_NAME, serde_json::to_string(&token)?));
+    Model::authorize(token, extra_data)
+}
+
+pub fn clear_auth_cookie(cookies: &mut Cookies) {
+    cookies.remove_private(Cookie::named(AUTH_TOKEN_NAME));
 }

@@ -45,29 +45,21 @@ fn main() {
         .manage(Model::new())
         .mount("/", routes![index, files])
         .mount(
-            "/view",
+            "/api",
             routes![
-                api::view::users::get,
-                api::view::login::get,
-                api::view::posts::get,
-            ],
-        )
-        .mount("/query", routes![])
-        .mount(
-            "/update",
-            routes![
-                api::update::login::get,
-                api::update::login::post,
-                api::update::logout::get,
-                api::update::logout::post,
-                api::update::register::get,
-                api::update::register::post,
-                api::update::register::post_json,
-                api::update::new_post::get,
-                api::update::new_post::post,
-                api::update::edit_post::get,
-                api::update::edit_post::post,
-                api::update::edit_post::post_json,
+                api::get_show_users,
+                api::get_show_posts,
+                api::get_show_authinfo,
+                api::get_form_login,
+                api::post_form_login,
+                api::get_form_logout,
+                api::post_form_logout,
+                api::get_form_register,
+                api::post_form_register,
+                api::get_form_newpost,
+                api::post_form_newpost,
+                api::get_form_editpost,
+                api::post_form_editpost,
             ],
         )
         .launch();

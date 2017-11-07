@@ -7,7 +7,6 @@ authors = ["Michael.Ilyin <milyin@gmail.com>"]
 serde="*"
 serde_derive="*"
 serde_json="*"
-maud = { version = "*", features = ["rocket"] }
 rocket = "*"
 rocket_codegen = "*"
 diesel = { version = "*", features = ["sqlite"] }

@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use std::env;
-use kit::hash;
+use super::model::hash;
 
 pub struct Env {
     pub database_url: String,

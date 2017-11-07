@@ -7,7 +7,6 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
 extern crate dotenv;
-extern crate maud;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate rocket;
@@ -26,7 +25,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 pub mod api;
-pub mod kit;
 pub mod app;
 
 
@@ -52,7 +50,6 @@ fn main() {
                 api::get_show_authinfo,
                 api::get_form_login,
                 api::post_form_login,
-                api::get_form_logout,
                 api::post_form_logout,
                 api::get_form_register,
                 api::post_form_register,

@@ -2,8 +2,6 @@ use app::{Model, ModelResult, AuthInfo, UserInfo, Post, set_auth_cookie, clear_a
 use rocket::request::State;
 use rocket_contrib::Json;
 use serde::Serialize;
-use kit::form::to_form;
-use maud::Markup;
 use rocket::http::Cookies;
 
 #[derive(Serialize)]
@@ -38,22 +36,14 @@ pub struct Login {
 }
 
 #[get("/form/login")]
-pub fn get_form_login() -> Markup {
-    to_form(&Login::default())
+pub fn get_form_login() -> Json<Login> {
+    Json(Login::default())
 }
 
 #[post("/form/login", data = "<data>")]
 pub fn post_form_login(model: State<Model>, data: Json<Login>, mut cookies: Cookies) -> Json<ApiResult<AuthInfo>> {
     let form = data.into_inner();
     Json(set_auth_cookie(&*model, &mut cookies, &form.name, &form.password, "", form.duration).into())
-}
-
-#[derive(Default, Serialize)]
-pub struct Logout {}
-
-#[get("/form/logout")]
-pub fn get_form_logout() -> Markup {
-    to_form(&Logout::default())
 }
 
 #[post("/form/logout")]
@@ -70,8 +60,8 @@ pub struct Register {
 }
 
 #[get("/form/register")]
-pub fn get_form_register() -> Markup {
-    to_form(&Register::default())
+pub fn get_form_register() -> Json<Register> {
+    Json(Register::default())
 }
 
 #[post("/form/register", data = "<data>", rank=2)]
@@ -88,8 +78,8 @@ pub struct EditPost {
 }
 
 #[get("/form/editpost")]
-pub fn get_form_editpost () -> Markup {
-    to_form(&EditPost::default())
+pub fn get_form_editpost () ->  Json<EditPost> {
+    Json(EditPost::default())
 }
 
 #[post("/form/editpost", data = "<data>")]
@@ -105,8 +95,8 @@ pub struct NewPost {
 }
 
 #[get("/form/newpost")]
-pub fn get_form_newpost() -> Markup {
-    to_form(&NewPost::default())
+pub fn get_form_newpost() -> Json<NewPost> {
+    Json(NewPost::default())
 }
 
 #[post("/form/newpost", data = "<data>")]
